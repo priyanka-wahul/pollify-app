@@ -7,9 +7,12 @@
             <div class="card shadow-lg border-0">
                 <div class="card-body p-5">
                     <div class="text-center">
-                        <span class="badge bg-success mb-3">
-                            LIVE POLL
-                        </span>
+                        <% if(poll.status === "closed"){ %>
+                            <span class="badge bg-success mb-3">POLL CLOSED </span>
+                        <% } else { %>
+                            <span class="badge bg-success mb-3">LIVE POLL </span>
+                        <%} %>
+                       
                         <h1 class="mb-4">
                             <%= poll.question %>
                         </h1>
@@ -19,11 +22,8 @@
 
                     <div class="alert alert-warning text-center">
 
-                        ⏱ Duration:
-                        <strong>
-                            <%= poll.timer %>
-                        </strong>
-                        Seconds
+                         ⏱ Time Remaining:
+                        <strong id="countdown"> Loading...</strong>
 
                     </div>
 
@@ -44,7 +44,7 @@
 <% poll.options.forEach(option => { %>
     <form action="/poll/<%= poll._id %>/vote"method="POST"class="mb-2">
         <input type="hidden" name="optionId" value="<%= option._id %>">
-        <button type="submit"class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center">
+        <button type="submit"class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center vote-btn">
             <%= option.text %> (<%= option.votes %>)
             <span><%= option.text %></span>
             <span class="badge bg-primary"><%= option.votes %></span>
@@ -64,12 +64,12 @@
 </div>
 
 <!-- Copy Alert -->
- <div id="copyAlert" class="alert alert-success d-none"> Poll link copied successfully!</div>
+ <div id="copyAlert" class="alert alert-success d-none"> Poll link copied successfully! you can share it</div>
 
 <!-- Share Link -->
 <h5> Share Poll</h5>
     <div class="input-group">
-    <input type="text" id="pollLink" class="form-control"value="http://localhost:8080/poll/<%= poll._id %>"readonly>
+    <input type="text" id="pollLink" class="form-control"value="<%= `${req.protocol}://${req.get('host')}/poll/${poll._id}` %>"readonly>
     <button id="copyBtn" class="btn btn-primary">Copy link</button>
                     </div>
                 </div>
@@ -79,3 +79,39 @@
 </div>
 <script src="/js/script.js"></script>
 
+<script>
+    const expiresAt =
+    new Date("<%= poll.expiresAt.toISOString() %>");
+
+    function updateTimer() {
+
+    const now = new Date();
+
+    const difference =
+        expiresAt - now;
+
+    if (difference <= 0) {
+
+        document.getElementById( "countdown").innerText = "Poll Closed";
+        const voteButtons = document.querySelectorAll(".vote-btn");
+        voteButtons.forEach(button => {
+            button.disabled = true;
+        });
+        clearInterval(timeInterval);
+        return;
+    }
+
+    const seconds =
+        Math.floor(difference / 1000);
+
+    document.getElementById(
+        "countdown"
+    ).innerText =
+        seconds + " seconds";
+
+}
+
+updateTimer();
+
+const timeInterval = setInterval(updateTimer, 1000);
+</script>

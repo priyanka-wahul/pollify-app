@@ -1,26 +1,23 @@
+if(process.env.NODE_ENV !=  "production"){
+    require("dotenv").config();
+}
+
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
 const path = require("path");
 const ejsMate = require("ejs-mate");
 const wrapAsync = require("./utils/wrapAsync.js");
 const ExpressError = require("./utils/ExpressError.js");
-const flash = require("connect-flash");
+const session = require("express-session");
+const MongoStoreImport = require("connect-mongo");
+const MongoStore = MongoStoreImport.default || MongoStoreImport;
 
 
 const Poll = require("./models/Poll");
 
-const MONGO_URL = 'mongodb://127.0.0.1:27017/polling';
-
-// Create HTTP Server 
-const server = http.createServer(app); 
-//Socket.IO Setup 
-const io = new Server(server, { cors: { origin: "*", }, });
-
-
+const dbUrl = process.env.ATLASDB_URL;
 
 main().then(() => {
     console.log("connected DB");
@@ -29,8 +26,25 @@ main().then(() => {
 })
 
 async function main() {
-  await mongoose.connect(MONGO_URL);
+  await mongoose.connect(dbUrl);
 }
+
+const store = MongoStore.create({
+    mongoUrl: dbUrl,
+    crypto : {
+        secret:process.env.SECRET,
+    },
+    touchAfter: 24 * 3600
+});
+
+
+const sessionOptions = {
+    store,
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: false,
+};
+
 
 //middleware
 app.set("view engine", "ejs");
@@ -43,25 +57,14 @@ app.use( express.static( path.join(__dirname, "public") ));
 app.use(express.json());
 
 app.use(express.urlencoded({extended: true}));
-app.use(flash());
 
-
-// Socket Connection 
-io.on("connection", (socket) => { 
-    console.log("User Connected"); 
-
-    socket.on("join_poll", (pollId) => { 
-    socket.join(pollId); 
-    console.log( `Joined Poll: ${pollId}` ); 
-}); 
-socket.on("disconnect", () => { 
-    console.log("User Disconnected"); 
-}); 
-});
+app.use(session(sessionOptions));
 
 // HOME PAGE 
-app.get("/", (req, res) => { 
-    res.render("index"); 
+app.get("/", async (req, res) => { 
+    const polls = await Poll.find()
+    .sort({ createdAt: -1 });
+    res.render("index",{ polls }); 
 });
 
 //create route
@@ -103,13 +106,15 @@ app.post("/poll", wrapAsync(async (req, res) => {
         pollType === "multiple" && finalOptions.length < 2) {
         throw new ExpressError(400,"At least 2 options are required");
     }
+    const expiresAt = new Date( Date.now() + timer * 1000);
 
         const poll = new Poll({
             question: question.trim(),
             pollType,
             options: finalOptions,
             timer,
-            chartType
+            chartType,
+            expiresAt,
         });
         await poll.save();
         // console.log("Poll Saved:");
@@ -121,39 +126,95 @@ app.post("/poll", wrapAsync(async (req, res) => {
 
 //create poll id 
 app.get("/poll/:id", wrapAsync(async (req, res) => {
-
     const poll = await Poll.findById(req.params.id);
     if (!poll) {
         throw new ExpressError(404, "Poll Not Found");
     }
-    res.render("poll", { poll });
+    res.render("poll", { poll,req});
 }));
 
-app.post("/poll/:id/vote",wrapAsync(async (req, res) => {
+//vote route
+app.post("/poll/:id/vote", wrapAsync(async (req, res) => {
+
     const { id } = req.params;
     const { optionId } = req.body;
-    const poll = await Poll.findById(id);
-    if (!poll) {
-            throw new ExpressError(404,"Poll Not Found");
-        }
-        const option = poll.options.id(optionId);
-        if (!option) {
-            throw new ExpressError(404,"Option Not Found");
-        }
-        option.votes += 1;
-        poll.totalVotes += 1;
-        await poll.save();
-        res.redirect(`/poll/${id}`);
-    })
-);
 
+    // Find Poll
+    const poll = await Poll.findById(id);
+
+    if (!poll) {
+        throw new ExpressError(
+            404,
+            "Poll Not Found"
+        );
+    }
+
+    // Initialize Session Storage
+    if (!req.session.votedPolls) {
+        req.session.votedPolls = [];
+    }
+
+    // Prevent Duplicate Voting
+    if (req.session.votedPolls.includes(id)) {
+        throw new ExpressError(
+            400,
+            "You have already voted in this poll"
+        );
+    }
+
+    // Check Poll Expiry
+    if (new Date() > poll.expiresAt) {
+
+        poll.status = "closed";
+
+        await poll.save();
+
+        throw new ExpressError(
+            400,
+            "Poll has expired"
+        );
+    }
+
+    // Find Selected Option
+    const option = poll.options.id(optionId);
+
+    if (!option) {
+        throw new ExpressError(
+            404,
+            "Option Not Found"
+        );
+    }
+
+    // Add Vote
+    option.votes += 1;
+
+    // Increase Total Votes
+    poll.totalVotes += 1;
+
+    // Remember User Voted
+    req.session.votedPolls.push(id);
+
+    // Save Changes
+    await poll.save();
+
+    // Redirect Back To Poll
+    res.redirect(`/poll/${id}`);
+
+}));
+//result route
 app.get("/poll/:id/results",wrapAsync(async (req, res) => {
     const poll = await Poll.findById(req.params.id);
     if (!poll) {
         throw new ExpressError(404, "Poll Not Found");
         }
-        res.render("results", { poll });
-    })
+        let winner = poll.options[0];
+        poll.options.forEach(option => {
+            if (option.votes > winner.votes) {
+                winner = option;
+    }
+});
+res.render("results", { poll,winner });
+})
 );
 
 // Test Create Poll Route 
@@ -194,9 +255,9 @@ app.get("/poll/:id/results",wrapAsync(async (req, res) => {
 //     } 
 // });
 
-app.get("/",(req,res) => {
-    res.send("Hi welcome !");
-});
+// app.get("/",(req,res) => {
+//     res.send("Hi welcome !");
+// });
 
 app.use((req,res,next) => {
     next(new ExpressError(404,"page not found"));
@@ -206,8 +267,6 @@ app.use((req,res,next) => {
 app.use((err,req,res,next) => {
     let {statusCode=500, message="something went wrong" } = err;
     res.status(statusCode).render("error.ejs",{err});
-    // res.status(statusCode).message(message);
-    // res.send("something went wrong");
 }); 
 
 app.listen(8080,() => {

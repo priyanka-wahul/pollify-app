@@ -1,36 +1,26 @@
 <% layout("/layouts/boilerplate") %>
 
 <div class="container py-5">
-
     <div class="row justify-content-center">
-
         <div class="col-lg-8">
-
             <div class="card shadow-lg border-0">
-
                 <div class="card-body p-5">
-
                     <div class="text-center mb-4">
-
-                        <span class="badge bg-success mb-3">
-                            POLL RESULTS
-                        </span>
-
-                        <h1>
-                            <%= poll.question %>
-                        </h1>
-
-                    </div>
-
-                    <div class="alert alert-info text-center">
-
-                        Total Votes:
+                        <span class="badge bg-success mb-3"> POLL RESUL</span>
+<div class="alert alert-success text-center">
+    <h4>Leading Option</h4>
+    <h5><%= winner.text %></h5>
+    <p class="mb-0">
+        <%= winner.votes %> Votes
+    </p>
+</div>
+<h1><%= poll.question %></h1>
+</div>
+<div class="alert alert-info text-center"> Total Votes:
                         <strong>
                             <%= poll.totalVotes %>
                         </strong>
-
                     </div>
-
                     <% poll.options.forEach(option => { %>
 
                         <%
@@ -44,7 +34,6 @@
                         %>
 
                         <div class="mb-4">
-
                             <div class="d-flex justify-content-between">
 
                                 <strong>
@@ -59,12 +48,12 @@
 
                             <div class="progress mt-2">
 
-                                <div
-                                    class="progress-bar"
-                                    role="progressbar">
-
-                                    <%= percentage %>%
-
+                                <div class="progress-bar" role="progressbar" 
+                                style="width: <%= percentage %>%"
+                                aria-valuenow="<%= percentage %>"
+                                aria-valuemin="0"
+                                aria-valuemax="100">          
+                                <%= percentage %>%
                                 </div>
 
                             </div>
@@ -100,6 +89,7 @@
     </div>
 
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // console.log(Chart);
@@ -130,22 +120,14 @@ new Chart(ctx, {
     },
 
     options: {
-
         responsive: true,
-
         scales: {
-
             y: {
-
                 beginAtZero: true
-
             }
-
         }
-
     }
-
 });
-console.log(labels);
-console.log(votes);
+// console.log(labels);
+// console.log(votes);
 </script>
