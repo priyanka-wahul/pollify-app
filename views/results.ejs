@@ -1,0 +1,151 @@
+<% layout("/layouts/boilerplate") %>
+
+<div class="container py-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-lg border-0">
+
+                <div class="card-body p-5">
+
+                    <div class="text-center mb-4">
+
+                        <span class="badge bg-success mb-3">
+                            POLL RESULTS
+                        </span>
+
+                        <h1>
+                            <%= poll.question %>
+                        </h1>
+
+                    </div>
+
+                    <div class="alert alert-info text-center">
+
+                        Total Votes:
+                        <strong>
+                            <%= poll.totalVotes %>
+                        </strong>
+
+                    </div>
+
+                    <% poll.options.forEach(option => { %>
+
+                        <%
+                            let percentage = 0;
+
+                            if (poll.totalVotes > 0) {
+                                percentage =
+                                ((option.votes / poll.totalVotes) * 100)
+                                .toFixed(1);
+                            }
+                        %>
+
+                        <div class="mb-4">
+
+                            <div class="d-flex justify-content-between">
+
+                                <strong>
+                                    <%= option.text %>
+                                </strong>
+
+                                <span>
+                                    <%= option.votes %> Votes
+                                </span>
+
+                            </div>
+
+                            <div class="progress mt-2">
+
+                                <div
+                                    class="progress-bar"
+                                    role="progressbar">
+
+                                    <%= percentage %>%
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    <% }) %>
+<hr class="my-5">
+
+<h3 class="text-center mb-4">
+    Poll Statistics
+</h3>
+
+<div class="card p-4">
+
+    <canvas id="resultsChart"></canvas>
+
+</div>
+
+                    <div class="text-center mt-4">
+                        <a href="/poll/<%= poll._id %>"class="btn btn-primary">
+                            Back To Poll
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// console.log(Chart);
+const labels = <%- JSON.stringify(poll.options.map(option => option.text)) %>;
+
+const votes = <%- JSON.stringify(poll.options.map(option => option.votes)) %>;
+
+const ctx =
+document.getElementById("resultsChart");
+const chartType ="<%= poll.chartType %>" === "donut"? "doughnut": "<%= poll.chartType %>";
+
+new Chart(ctx, {
+
+    type: chartType,
+
+    data: {
+
+        labels: labels,
+
+        datasets: [{
+
+            label: "Votes",
+
+            data: votes,
+            backgroundColor: ["#0d6efd","#198754","#dc3545","#ffc107","#6f42c1","#fd7e14"],
+            borderWidth: 1
+        }]
+    },
+
+    options: {
+
+        responsive: true,
+
+        scales: {
+
+            y: {
+
+                beginAtZero: true
+
+            }
+
+        }
+
+    }
+
+});
+console.log(labels);
+console.log(votes);
+</script>

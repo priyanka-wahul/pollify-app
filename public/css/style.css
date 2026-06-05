@@ -1,0 +1,107 @@
+/* body { 
+    background-color: #0b1020;
+    color: white;
+     min-height: 100vh; 
+    } 
+.navbar { 
+    background-color: #141b2d !important; 
+} 
+.btn-primary { 
+    background: linear-gradient( 90deg, #7c3aed, #06b6d4 ); 
+    border: none; 
+} */
+
+
+body {
+  background-color: #0b1020;
+  color: white;
+  min-height: 100vh;
+}
+
+/* Navbar */
+.custom-navbar {
+  background-color: #121826;
+  border-bottom: 1px solid #1f2937;
+}
+
+.nav-link {
+  color: #d1d5db !important;
+  transition: 0.3s;
+}
+
+.nav-link:hover {
+  color: #ffffff !important;
+}
+
+/* Gradient Button */
+.btn-gradient {
+  background: linear-gradient(
+    90deg,
+    #7c3aed,
+    #06b6d4
+  );
+
+  border: none;
+  color: white;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+.btn-gradient:hover {
+  opacity: 0.9;
+  color: white;
+}
+
+/* Footer */
+.footer-section {
+  border-top: 1px solid #1f2937;
+  background-color: #121826;
+}
+
+
+/* Create page  */
+
+.custom-card {
+  background-color: #121826;
+  border: 1px solid #1f2937;
+  border-radius: 20px;
+  color: white;
+}
+
+.form-control,
+.form-select {
+  background-color: #0f172a;
+  border: 1px solid #374151;
+  color: white;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: #0f172a;
+  color: white;
+  border-color: #7c3aed;
+  box-shadow: none;
+}
+
+.form-label {
+  font-weight: 600;
+}
+
+
+/* created poll styling  */
+.poll-card{
+    border-radius:20px;
+    background:#fff;
+}
+
+.poll-card h1{
+    font-weight:700;
+}
+
+.btn-outline-primary{
+    transition:0.3s;
+}
+
+.btn-outline-primary:hover{
+    transform:scale(1.02);
+}
