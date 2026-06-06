@@ -1,13 +1,13 @@
 #  Pollify App
 
 A real-time polling application built using **Node.js, Express, MongoDB, and EJS**.  
-Users can create polls, vote on options, and view live results with charts.
+Users can create,share polls, vote on options, and view live results with charts.
 
 ---
 
-##  Live Demo
+##  Live app link 
 
-
+https://pollify-app.onrender.com
 
 ---
 
@@ -45,3 +45,4 @@ ChatGPT (debugging, architecture guidance, session handling fixes)
 - multiple choice polls
 - session-based duplicate vote prevention
 - poll expiration timer
+- you can share link and vote
